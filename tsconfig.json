@@ -21,5 +21,13 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
-  }
+  },
+  "plugins": [
+    {
+      "name": "@nestjs/swagger",
+      "dtoFileNameSuffix": [".dto.ts", ".entity.ts"],
+      "classValidatorShim": true,
+      "introspectComments": true
+    }
+  ]
 }

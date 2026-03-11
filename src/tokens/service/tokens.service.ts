@@ -1,10 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { GenerateTokensResponseDto } from '../dto/generate-tokens-response.dto';
+import { TokenPairDto } from '../dto/token-pair.dto';
 import { TOKENS_REPOSITORY } from '../constants/tokens.constants';
-import { InsertResult, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Token } from '../entity/tokens.entity';
+import { ERole } from 'src/users/enums/roles.enum';
+import { TokenPayloadDto } from '../dto/token-payload.dto';
 
 @Injectable()
 export class TokensService {
@@ -15,8 +17,8 @@ export class TokensService {
     private jwtService: JwtService
   ) {}
 
-  async generateTokens(userId: number): Promise<GenerateTokensResponseDto> {
-    const payload = { sub: userId };
+  async generateTokens(userId: number, role: ERole): Promise<TokenPairDto> {
+    const payload = { sub: userId, role };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
@@ -32,7 +34,43 @@ export class TokensService {
     return { accessToken, refreshToken };
   }
 
-  async saveToken(userId: number, refreshToken: string): Promise<InsertResult> {
-    return await this.tokensRepository.upsert({ userId, refreshToken }, ['userId']);
+  async validateAccessToken(accessToken: string): Promise<TokenPayloadDto> {
+    try {
+      return await this.jwtService.verifyAsync<TokenPayloadDto>(accessToken, {
+        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+      });
+    } catch (error) {
+      throw new UnauthorizedException('Invalid access token');
+    }
+  }
+
+  async validateRefreshToken(refreshToken: string): Promise<TokenPayloadDto> {
+    try {
+      return await this.jwtService.verifyAsync<TokenPayloadDto>(refreshToken, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+      });
+    } catch (error) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
+
+  async saveToken(userId: number, refreshToken: string): Promise<Token> {
+    const tokenData = await this.tokensRepository.findOneBy({ userId });
+
+    if (!!tokenData) {
+      tokenData.refreshToken = refreshToken;
+      return await this.tokensRepository.save(tokenData);
+    }
+
+    const newToken = this.tokensRepository.create({ userId, refreshToken });
+    return await this.tokensRepository.save(newToken);
+  }
+
+  async deleteToken(refreshToken: string): Promise<void> {
+    await this.tokensRepository.delete({ refreshToken });
+  }
+
+  async findToken(refreshToken: string): Promise<Token | null> {
+    return await this.tokensRepository.findOneBy({ refreshToken });
   }
 }
