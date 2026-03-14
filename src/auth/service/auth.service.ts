@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { HashService } from '../../shared/hash/service/hash.service';
 import { TokensService } from '../../tokens/service/tokens.service';
 import { UsersService } from '../../users/service/users.service';
@@ -30,6 +30,7 @@ export class AuthService {
 
     return {
       accessToken,
+      refreshToken,
       user: {
         id: user.id,
         username: user.username,
@@ -40,7 +41,7 @@ export class AuthService {
 
   async register(username: string, email: string, password: string): Promise<AuthResponseDto> {
     const isUserExists = await this.usersService.findOneByEmail(email);
-    if (!!isUserExists) {
+    if (isUserExists) {
       throw new ConflictException('User alredy exists');
     }
 
@@ -58,6 +59,7 @@ export class AuthService {
 
     return {
       accessToken,
+      refreshToken,
       user: {
         id: user.id,
         username: user.username,
@@ -92,6 +94,7 @@ export class AuthService {
 
     return {
       accessToken,
+      refreshToken,
       user: {
         id: user.id,
         username: user.username,

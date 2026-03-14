@@ -39,7 +39,7 @@ export class TokensService {
       return await this.jwtService.verifyAsync<TokenPayloadDto>(accessToken, {
         secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
       });
-    } catch (error) {
+    } catch (_error) {
       throw new UnauthorizedException('Invalid access token');
     }
   }
@@ -49,7 +49,7 @@ export class TokensService {
       return await this.jwtService.verifyAsync<TokenPayloadDto>(refreshToken, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
-    } catch (error) {
+    } catch (_error) {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
@@ -57,7 +57,7 @@ export class TokensService {
   async saveToken(userId: number, refreshToken: string): Promise<Token> {
     const tokenData = await this.tokensRepository.findOneBy({ userId });
 
-    if (!!tokenData) {
+    if (tokenData) {
       tokenData.refreshToken = refreshToken;
       return await this.tokensRepository.save(tokenData);
     }

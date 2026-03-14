@@ -3,6 +3,7 @@ import { USERS_REPOSITORY } from '../constants/users.constants';
 import { Repository } from 'typeorm';
 import { User } from '../entity/users.entity';
 import { CreateUserDto } from '../dto/create-user.dto';
+import { DeleteResult } from 'typeorm/browser';
 
 @Injectable()
 export class UsersService {
@@ -23,9 +24,13 @@ export class UsersService {
     return await this.usersRespository.findOneBy({ email });
   }
 
-  async createUser(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto): Promise<User> {
     const newUser = this.usersRespository.create(createUserDto);
 
     return await this.usersRespository.save(newUser);
+  }
+
+  async delete(userId: number): Promise<void> {
+    await this.usersRespository.delete({ id: userId });
   }
 }
