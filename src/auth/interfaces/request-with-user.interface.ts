@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { ERole } from 'src/users/enums/roles.enum';
+import { ERole } from 'src/shared/common/enums/roles.enum';
 
 export interface IRequestWithUser extends Request {
   user: {

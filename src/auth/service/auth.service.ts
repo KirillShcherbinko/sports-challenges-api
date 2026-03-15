@@ -3,7 +3,7 @@ import { HashService } from '../../shared/hash/service/hash.service';
 import { TokensService } from '../../tokens/service/tokens.service';
 import { UsersService } from '../../users/service/users.service';
 import { AuthResponseDto } from '../dto/auth-response.dto';
-import { ERole } from 'src/users/enums/roles.enum';
+import { ERole } from 'src/shared/common/enums/roles.enum';
 
 @Injectable()
 export class AuthService {
@@ -26,7 +26,7 @@ export class AuthService {
     }
 
     const { accessToken, refreshToken } = await this.tokensService.generateTokens(user.id, user.role);
-    await this.tokensService.saveToken(user.id, refreshToken);
+    await this.tokensService.saveToken(user, refreshToken);
 
     return {
       accessToken,
@@ -47,7 +47,7 @@ export class AuthService {
 
     const passwordHash = await this.hashService.hash(password);
 
-    const user = await this.usersService.createUser({
+    const user = await this.usersService.create({
       username,
       email,
       passwordHash,
@@ -55,7 +55,7 @@ export class AuthService {
     });
 
     const { accessToken, refreshToken } = await this.tokensService.generateTokens(user.id, user.role);
-    await this.tokensService.saveToken(user.id, refreshToken);
+    await this.tokensService.saveToken(user, refreshToken);
 
     return {
       accessToken,
@@ -68,8 +68,8 @@ export class AuthService {
     };
   }
 
-  async logout(refreshToken: string): Promise<void> {
-    await this.tokensService.deleteToken(refreshToken);
+  async logout(userId: number): Promise<void> {
+    await this.tokensService.deleteToken(userId);
   }
 
   async refresh(oldRefreshToken: string): Promise<AuthResponseDto> {
@@ -90,7 +90,7 @@ export class AuthService {
     }
 
     const { accessToken, refreshToken } = await this.tokensService.generateTokens(user.id, user.role);
-    await this.tokensService.saveToken(user.id, refreshToken);
+    await this.tokensService.saveToken(user, refreshToken);
 
     return {
       accessToken,

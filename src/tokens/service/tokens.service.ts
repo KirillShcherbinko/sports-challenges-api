@@ -5,8 +5,9 @@ import { TokenPairDto } from '../dto/token-pair.dto';
 import { TOKENS_REPOSITORY } from '../constants/tokens.constants';
 import { Repository } from 'typeorm';
 import { Token } from '../entity/tokens.entity';
-import { ERole } from 'src/users/enums/roles.enum';
+import { ERole } from 'src/shared/common/enums/roles.enum';
 import { TokenPayloadDto } from '../dto/token-payload.dto';
+import { User } from 'src/users/entity/users.entity';
 
 @Injectable()
 export class TokensService {
@@ -39,7 +40,7 @@ export class TokensService {
       return await this.jwtService.verifyAsync<TokenPayloadDto>(accessToken, {
         secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
       });
-    } catch (_error) {
+    } catch {
       throw new UnauthorizedException('Invalid access token');
     }
   }
@@ -49,25 +50,29 @@ export class TokensService {
       return await this.jwtService.verifyAsync<TokenPayloadDto>(refreshToken, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
-    } catch (_error) {
+    } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
 
-  async saveToken(userId: number, refreshToken: string): Promise<Token> {
-    const tokenData = await this.tokensRepository.findOneBy({ userId });
+  async saveToken(user: User, refreshToken: string): Promise<Token> {
+    const tokenData = await this.tokensRepository.findOne({
+      where: {
+        user: { id: user.id },
+      },
+    });
 
     if (tokenData) {
       tokenData.refreshToken = refreshToken;
       return await this.tokensRepository.save(tokenData);
     }
 
-    const newToken = this.tokensRepository.create({ userId, refreshToken });
+    const newToken = this.tokensRepository.create({ user, refreshToken });
     return await this.tokensRepository.save(newToken);
   }
 
-  async deleteToken(refreshToken: string): Promise<void> {
-    await this.tokensRepository.delete({ refreshToken });
+  async deleteToken(userId: number): Promise<void> {
+    await this.tokensRepository.delete({ user: { id: userId } });
   }
 
   async findToken(refreshToken: string): Promise<Token | null> {

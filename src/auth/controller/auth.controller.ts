@@ -68,9 +68,10 @@ export class AuthController {
   @ApiAuth()
   @ApiOperation({ summary: 'Logout' })
   @ApiNoContentResponse({ description: 'Success logout' })
+  @ApiUnauthorizedResponse({ description: 'Invalid refresh token' })
   async logout(@Req() req: IRequestWithUser, @Res({ passthrough: true }) res: Response): Promise<void> {
-    const { refreshToken } = req.cookies;
-    await this.authService.logout(refreshToken);
+    const { id } = req.user;
+    await this.authService.logout(id);
     this.cookieService.clearCookie(res);
   }
 
@@ -80,7 +81,7 @@ export class AuthController {
   @ApiOkResponse({ description: 'Access token refreshed', type: AuthHandledResponseDto })
   @ApiUnauthorizedResponse({ description: 'Invalid refresh token or user' })
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<AuthHandledResponseDto> {
-    const { refreshToken: oldRefreshToken } = req.cookies;
+    const { refreshToken: oldRefreshToken }: { refreshToken?: string } = req.cookies;
     if (!oldRefreshToken) {
       throw new UnauthorizedException('Refresh token not found');
     }
